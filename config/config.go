@@ -30,6 +30,7 @@ type Config struct {
 	Proxy                  string
 	ChatDelete             bool
 	MaxChatHistoryLength   int
+	MaxContextMessages     int
 	RetryCount             int
 	NoRolePrefix           bool
 	PromptDisableArtifacts bool
@@ -107,6 +108,12 @@ func LoadConfig() *Config {
 	if err != nil {
 		maxChatHistoryLength = 10000 // 默认值
 	}
+
+	maxContextMessages, err := strconv.Atoi(os.Getenv("MAX_CONTEXT_MESSAGES"))
+	if err != nil {
+		maxContextMessages = 20 // 默认值
+	}
+
 	retryCount, sessions := parseSessionEnv(os.Getenv("SESSIONS"))
 	config := &Config{
 		// 解析 SESSIONS 环境变量
@@ -122,6 +129,8 @@ func LoadConfig() *Config {
 		ChatDelete: os.Getenv("CHAT_DELETE") != "false",
 		// 设置最大聊天历史长度
 		MaxChatHistoryLength: maxChatHistoryLength,
+		// 设置最大上下文消息数
+		MaxContextMessages: maxContextMessages,
 		// 设置重试次数
 		RetryCount: retryCount,
 		// 设置是否使用角色前缀
@@ -173,6 +182,7 @@ func init() {
 	logger.Info(fmt.Sprintf("Proxy: %s", ConfigInstance.Proxy))
 	logger.Info(fmt.Sprintf("ChatDelete: %t", ConfigInstance.ChatDelete))
 	logger.Info(fmt.Sprintf("MaxChatHistoryLength: %d", ConfigInstance.MaxChatHistoryLength))
+	logger.Info(fmt.Sprintf("MaxContextMessages: %d", ConfigInstance.MaxContextMessages))
 	logger.Info(fmt.Sprintf("NoRolePrefix: %t", ConfigInstance.NoRolePrefix))
 	logger.Info(fmt.Sprintf("PromptDisableArtifacts: %t", ConfigInstance.PromptDisableArtifacts))
 	logger.Info(fmt.Sprintf("EnableMirrorApi: %t", ConfigInstance.EnableMirrorApi))

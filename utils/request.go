@@ -91,6 +91,7 @@ func (p *ChatRequestProcessor) ResetForBigContext() {
 	if lastUserMessage != "" {
 		p.Prompt.WriteString("Human: " + lastUserMessage + "\n\n")
 	}
+	logger.Info(fmt.Sprintf("ResetForBigContext: %s", p.Prompt.String()))
 }
 
 // 提取最后一个用户消息

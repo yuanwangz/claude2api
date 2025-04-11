@@ -10,17 +10,19 @@ import (
 
 // ChatRequestProcessor handles common chat request processing logic
 type ChatRequestProcessor struct {
-	Prompt      strings.Builder
-	RootPrompt  strings.Builder
-	ImgDataList []string
+	Prompt          strings.Builder
+	RootPrompt      strings.Builder
+	ImgDataList     []string
+	LastUserMessage string
 }
 
 // NewChatRequestProcessor creates a new processor instance
 func NewChatRequestProcessor() *ChatRequestProcessor {
 	return &ChatRequestProcessor{
-		Prompt:      strings.Builder{},
-		RootPrompt:  strings.Builder{},
-		ImgDataList: []string{},
+		Prompt:          strings.Builder{},
+		RootPrompt:      strings.Builder{},
+		ImgDataList:     []string{},
+		LastUserMessage: "",
 	}
 }
 
@@ -41,11 +43,16 @@ func (p *ChatRequestProcessor) ProcessMessages(messages []map[string]interface{}
 			continue
 		}
 
-		p.Prompt.WriteString(GetRolePrefix(role))
+		rolePrefix := GetRolePrefix(role)
+
+		p.Prompt.WriteString(rolePrefix)
 
 		switch v := content.(type) {
 		case string: // If content is directly a string
 			p.Prompt.WriteString(v + "\n\n")
+			if role == "user" {
+				p.LastUserMessage = rolePrefix + v + "\n\n"
+			}
 		case []interface{}: // If content is an array of []interface{} type
 			for _, item := range v {
 				if itemMap, ok := item.(map[string]interface{}); ok {
@@ -53,6 +60,9 @@ func (p *ChatRequestProcessor) ProcessMessages(messages []map[string]interface{}
 						if itemType == "text" {
 							if text, ok := itemMap["text"].(string); ok {
 								p.Prompt.WriteString(text + "\n\n")
+								if role == "user" {
+									p.LastUserMessage = rolePrefix + text + "\n\n"
+								}
 							}
 						} else if itemType == "image_url" {
 							if imageUrl, ok := itemMap["image_url"].(map[string]interface{}); ok {
@@ -65,6 +75,7 @@ func (p *ChatRequestProcessor) ProcessMessages(messages []map[string]interface{}
 				}
 			}
 		}
+		logger.Debug(fmt.Sprintf("LastUserMessage: %s", p.LastUserMessage))
 	}
 	p.RootPrompt.WriteString(p.Prompt.String())
 	// Debug output
@@ -74,9 +85,6 @@ func (p *ChatRequestProcessor) ProcessMessages(messages []map[string]interface{}
 
 // ResetForBigContext resets the prompt for big context usage
 func (p *ChatRequestProcessor) ResetForBigContext() {
-	// 保存最后一个用户消息
-	lastUserMessage := extractLastUserMessage(p.Prompt.String())
-
 	// 重置提示词
 	p.Prompt.Reset()
 
@@ -88,46 +96,8 @@ func (p *ChatRequestProcessor) ResetForBigContext() {
 	p.Prompt.WriteString(config.ConfigInstance.BigContextPrompt + "\n\n")
 
 	// 添加最后一个用户消息
-	if lastUserMessage != "" {
-		p.Prompt.WriteString("Human: " + lastUserMessage + "\n\n")
+	if p.LastUserMessage != "" {
+		p.Prompt.WriteString(p.LastUserMessage)
 	}
 	logger.Info(fmt.Sprintf("ResetForBigContext: %s", p.Prompt.String()))
-}
-
-// 提取最后一个用户消息
-func extractLastUserMessage(prompt string) string {
-	lines := strings.Split(prompt, "\n")
-	var lastUserMessage string
-	var collectingMessage bool
-
-	// 从后向前遍历所有行
-	for i := len(lines) - 1; i >= 0; i-- {
-		line := strings.TrimSpace(lines[i])
-
-		// 如果发现空行且正在收集消息，则已完成一条消息的收集
-		if line == "" && collectingMessage {
-			break
-		}
-
-		// 如果发现"Human: "前缀，开始收集消息
-		if strings.HasPrefix(line, "Human: ") {
-			// 添加这行（去掉前缀）到消息中
-			userLine := strings.TrimPrefix(line, "Human: ")
-			if lastUserMessage == "" {
-				lastUserMessage = userLine
-			} else {
-				lastUserMessage = userLine + " " + lastUserMessage
-			}
-			collectingMessage = true
-		} else if collectingMessage {
-			// 继续收集多行消息
-			if lastUserMessage == "" {
-				lastUserMessage = line
-			} else {
-				lastUserMessage = line + " " + lastUserMessage
-			}
-		}
-	}
-
-	return lastUserMessage
 }

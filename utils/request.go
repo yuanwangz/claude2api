@@ -74,9 +74,59 @@ func (p *ChatRequestProcessor) ProcessMessages(messages []map[string]interface{}
 
 // ResetForBigContext resets the prompt for big context usage
 func (p *ChatRequestProcessor) ResetForBigContext() {
+	// 保存最后一个用户消息
+	lastUserMessage := extractLastUserMessage(p.Prompt.String())
+
+	// 重置提示词
 	p.Prompt.Reset()
+
 	if config.ConfigInstance.PromptDisableArtifacts {
 		p.Prompt.WriteString("System: Forbidden to use <antArtifac> </antArtifac> to wrap code blocks, use markdown syntax instead, which means wrapping code blocks with ``` ```\n\n")
 	}
+
+	// 添加大型上下文提示词
 	p.Prompt.WriteString(config.ConfigInstance.BigContextPrompt + "\n\n")
+
+	// 添加最后一个用户消息
+	if lastUserMessage != "" {
+		p.Prompt.WriteString("Human: " + lastUserMessage + "\n\n")
+	}
+}
+
+// 提取最后一个用户消息
+func extractLastUserMessage(prompt string) string {
+	lines := strings.Split(prompt, "\n")
+	var lastUserMessage string
+	var collectingMessage bool
+
+	// 从后向前遍历所有行
+	for i := len(lines) - 1; i >= 0; i-- {
+		line := strings.TrimSpace(lines[i])
+
+		// 如果发现空行且正在收集消息，则已完成一条消息的收集
+		if line == "" && collectingMessage {
+			break
+		}
+
+		// 如果发现"Human: "前缀，开始收集消息
+		if strings.HasPrefix(line, "Human: ") {
+			// 添加这行（去掉前缀）到消息中
+			userLine := strings.TrimPrefix(line, "Human: ")
+			if lastUserMessage == "" {
+				lastUserMessage = userLine
+			} else {
+				lastUserMessage = userLine + " " + lastUserMessage
+			}
+			collectingMessage = true
+		} else if collectingMessage {
+			// 继续收集多行消息
+			if lastUserMessage == "" {
+				lastUserMessage = line
+			} else {
+				lastUserMessage = line + " " + lastUserMessage
+			}
+		}
+	}
+
+	return lastUserMessage
 }

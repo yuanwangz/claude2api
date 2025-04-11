@@ -105,6 +105,7 @@ Api支持访问格式为 openai 格式
  | `PROMPT_DISABLE_ARTIFACTS` | 添加提示词尝试禁用 ARTIFACTS| `false` |
  | `ENABLE_MIRROR_API` | 允许直接使用 sk-ant-* 作为 key 使用 | `false` |
  | `MIRROR_API_PREFIX` | 对直接使用增加接口前缀，开启ENABLE_MIRROR_API时必填 | `` |
+ | `BIG_CONTEXT_PROMPT` | 处理大型上下文时的自定义提示词，用于优化context.txt文件处理 | `You must immerse yourself in the role of assistant in context.txt...` |
  
  ## 📝 API使用
  ### 认证

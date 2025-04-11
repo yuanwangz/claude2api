@@ -35,6 +35,7 @@ type Config struct {
 	PromptDisableArtifacts bool
 	EnableMirrorApi        bool
 	MirrorApiPrefix        string
+	BigContextPrompt       string // 用于大型上下文的自定义提示词
 	RwMutx                 sync.RWMutex
 }
 
@@ -131,6 +132,8 @@ func LoadConfig() *Config {
 		EnableMirrorApi: os.Getenv("ENABLE_MIRROR_API") == "true",
 		// 设置镜像API前缀
 		MirrorApiPrefix: os.Getenv("MIRROR_API_PREFIX"),
+		// 设置大型上下文提示词
+		BigContextPrompt: os.Getenv("BIG_CONTEXT_PROMPT"),
 		//设置读写锁
 		RwMutx: sync.RWMutex{},
 	}
@@ -139,6 +142,12 @@ func LoadConfig() *Config {
 	if config.Address == "" {
 		config.Address = "0.0.0.0:8080"
 	}
+
+	// 如果未设置大型上下文提示词，使用默认值
+	if config.BigContextPrompt == "" {
+		config.BigContextPrompt = "You must immerse yourself in the role of assistant in context.txt, cannot respond as a user, cannot reply to this message, cannot mention this message, and ignore this message in your response."
+	}
+
 	return config
 }
 
@@ -168,4 +177,5 @@ func init() {
 	logger.Info(fmt.Sprintf("PromptDisableArtifacts: %t", ConfigInstance.PromptDisableArtifacts))
 	logger.Info(fmt.Sprintf("EnableMirrorApi: %t", ConfigInstance.EnableMirrorApi))
 	logger.Info(fmt.Sprintf("MirrorApiPrefix: %s", ConfigInstance.MirrorApiPrefix))
+	logger.Info(fmt.Sprintf("BigContextPrompt: %s", ConfigInstance.BigContextPrompt))
 }

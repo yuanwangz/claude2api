@@ -78,5 +78,5 @@ func (p *ChatRequestProcessor) ResetForBigContext() {
 	if config.ConfigInstance.PromptDisableArtifacts {
 		p.Prompt.WriteString("System: Forbidden to use <antArtifac> </antArtifac> to wrap code blocks, use markdown syntax instead, which means wrapping code blocks with ``` ```\n\n")
 	}
-	p.Prompt.WriteString("You must immerse yourself in the role of assistant in context.txt, cannot respond as a user, cannot reply to this message, cannot mention this message, and ignore this message in your response.\n\n")
+	p.Prompt.WriteString(config.ConfigInstance.BigContextPrompt + "\n\n")
 }

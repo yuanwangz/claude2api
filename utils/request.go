@@ -96,8 +96,8 @@ func (p *ChatRequestProcessor) ResetForBigContext() {
 	p.Prompt.WriteString(config.ConfigInstance.BigContextPrompt + "\n\n")
 
 	// 添加最后一个用户消息
-	// if p.LastUserMessage != "" {
-	// 	p.Prompt.WriteString(p.LastUserMessage)
-	// }
-	// logger.Debug(fmt.Sprintf("ResetForBigContext: %s", p.Prompt.String()))
+	if p.LastUserMessage != "" {
+		p.Prompt.WriteString(p.LastUserMessage)
+	}
+	logger.Debug(fmt.Sprintf("ResetForBigContext: %s", p.Prompt.String()))
 }

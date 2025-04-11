@@ -206,9 +206,9 @@ func handleChatRequest(c *gin.Context, session config.SessionInfo, model string,
 	}
 
 	// Handle large context if needed
-	if processor.Prompt.Len() > config.ConfigInstance.MaxChatHistoryLength {
-		claudeClient.SetBigContext(processor.Prompt.String())
-		processor.ResetForBigContext()
+	if len(processor.LastUserMessage) > config.ConfigInstance.MaxChatHistoryLength {
+		claudeClient.SetBigContext(processor.LastUserMessage)
+		// processor.ResetForBigContext()
 		logger.Info(fmt.Sprintf("Prompt length exceeds max limit (%d), using file context", config.ConfigInstance.MaxChatHistoryLength))
 	}
 
